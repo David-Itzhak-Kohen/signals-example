@@ -12,7 +12,8 @@ export const isObject = (value: unknown) => {
 export const createDeepObjectObserver = <T extends Object>(
   target: T,
   handler: IObserverHandler,
-  cache: WeakMap<Object, Object>
+  cache: WeakMap<Object, Object>,
+  parents: Object[] = []
 ): T => {
   if (cache.has(target)) {
     return cache.get(target) as T;
@@ -27,15 +28,22 @@ export const createDeepObjectObserver = <T extends Object>(
       handler.afterGet?.();
 
       if (isObject(value)) {
-        return createDeepObjectObserver(value as Object, handler, cache);
+        return createDeepObjectObserver(value as Object, handler, cache, [
+          ...parents,
+          target,
+        ]);
       }
 
       return value;
     },
     set: (object, key, value) => {
-      console.log("set", object, key, value);
-      handler.beforeSet?.();
+      parents.forEach((parent) => {
+        cache.delete(parent);
+      });
+
       cache.delete(object);
+
+      handler.beforeSet?.();
       const success = Reflect.set(object, key, value);
 
       if (success) {

@@ -49,6 +49,10 @@ const ComplexState = () => {
         state.value.items = items;
       });
     }
+  }, [state.value.sack?.id]);
+
+  useEffect(() => {
+    console.log("sack value changed", state.value.sack);
   }, [state.value.sack]);
 
   useEffect(() => {
