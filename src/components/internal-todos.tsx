@@ -7,9 +7,9 @@ const InternalTodos = () => {
   const todos = useSignal<ITodo[]>([]);
 
   const updateIsDone = (id: number, isDone: boolean) => {
-    todos.value = todos.value.map((todo) =>
-      todo.id === id ? { ...todo, isDone } : todo
-    );
+    const index = todos.value.findIndex((todo) => todo.id === id);
+
+    todos.value[index].completed = isDone;
   };
 
   useEffect(() => {
