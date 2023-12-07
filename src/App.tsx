@@ -1,15 +1,13 @@
+import InternalTodos from "./components/internal-todos";
+import InternalCounter from "./components/internal-counter";
+import ExternalTodos from "./components/external-todos";
 import ExternalUser from "./components/external-user";
 import InternalUser from "./components/internal-user";
-import InternalTodos from "./components/internal-todos";
-import ExternalTodos from "./components/external-todos";
 
 function App() {
   return (
     <>
-      <ExternalTodos />
-      <InternalTodos />
       <InternalUser />
-      <ExternalUser />
     </>
   );
 }
