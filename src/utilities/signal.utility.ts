@@ -1,6 +1,10 @@
+import {
+  isObject,
+  dereference,
+  createDeepObjectObserver,
+} from "./proxy.utility";
 import { Callback } from "../types/callback.type";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createDeepObjectObserver, isObject } from "./proxy.utility";
 
 class GlobalSignalEffects {
   public static active: Function | null = null;
@@ -37,6 +41,12 @@ export class Signal<T> {
         afterSet: () => {
           this.#_notify();
         },
+        beforeDelete: () => {
+          this.#_unsubscribe(GlobalSignalEffects.active as Callback<T>);
+        },
+        afterDelete: () => {
+          this.#_notify();
+        },
       },
       this.#_proxy_cache
     ) as T;
@@ -52,12 +62,10 @@ export class Signal<T> {
     this.#_is_processing_changes = true;
 
     queueMicrotask(() => {
-      const subscribers = [...this.#_subscribers].filter(
-        (subscriber) => !this.#_subscriber_blacklist.has(subscriber)
-      );
-
-      subscribers.forEach((subscriber) => {
-        subscriber(this.#_proxify(this.#_value));
+      this.#_subscribers.forEach((subscriber) => {
+        if (!this.#_subscriber_blacklist.has(subscriber)) {
+          subscriber(this.#_proxify(this.#_value));
+        }
       });
 
       this.#_is_processing_changes = false;
@@ -74,7 +82,7 @@ export class Signal<T> {
 
   set value(value: T) {
     this.#_unsubscribe(GlobalSignalEffects.active as Callback<T>);
-    this.#_value = value;
+    this.#_value = dereference(value);
     this.#_notify();
   }
 
@@ -88,25 +96,6 @@ export class Signal<T> {
       },
       set value(value: T) {
         self.value = value;
-      },
-      subscribe: (callback: Callback<T>) => {
-        self.subscribe(callback);
-      },
-    };
-
-    return copy;
-  };
-
-  public readonlyClone = () => {
-    const self = this;
-
-    const copy = {
-      ...self,
-      get value() {
-        return self.value;
-      },
-      set value(_) {
-        throw new Error("Cannot set readonly signal");
       },
       subscribe: (callback: Callback<T>) => {
         self.subscribe(callback);
@@ -153,7 +142,7 @@ export const signalEffect = (callback: Function) => {
   GlobalSignalEffects.active = null;
 };
 
-export const computedSignal = <T>(callback: () => T): Signal<T> => {
+export const computedSignal = <T>(callback: () => T) => {
   const signal = createSignal<T>(callback());
 
   signalEffect(() => {
@@ -164,7 +153,7 @@ export const computedSignal = <T>(callback: () => T): Signal<T> => {
     }
   });
 
-  return signal.readonlyClone();
+  return signal;
 };
 
 export const useSignal = <T>(initial: T) => {
