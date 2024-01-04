@@ -30,6 +30,7 @@ const FilesExample = () => {
 
   useEffect(() => {
     files.forEach(async (file) => {
+      console.log("file", file);
       if (display.has(file.name)) return;
 
       const url = await convertFileToURL(file);
@@ -60,6 +61,7 @@ const FilesExample = () => {
         onChange={(event) => {
           const files = event.target.files;
           if (files) {
+            console.log(store.value.files, files);
             store.value.files = [...store.value.files, ...files];
           }
         }}
